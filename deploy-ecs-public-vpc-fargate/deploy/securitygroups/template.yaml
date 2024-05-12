@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create two security groups
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where the ECS cluster and services will be deployed
+  ALBSecurityGroup:
+    Type: String
+    Description: Name for the ALB security group
+  ECSSecurityGroup:
+    Type: String
+    Description: Name for the ECS security group  
+
+Resources:
+
+  ALBSecuirityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Ref ALBSecurityGroup
+      GroupDescription: ALB securitygroup allow internet traffic
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref VpcId
+
+  EcsSecuirityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Ref ECSSecurityGroup
+      GroupDescription: ECS Secuirity group allow traffic from ALB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt ALBSecuirityGroup.GroupId
+      VpcId: !Ref VpcId
+
+Outputs:
+  ALBSecuirityGroupId:
+    Description: ALB Security group ID
+    Value: !Ref ALBSecuirityGroup
+  EcsSecuirityGroupId:
+    Description: Ecs Secuirity group ID
+    Value: !Ref EcsSecuirityGroup

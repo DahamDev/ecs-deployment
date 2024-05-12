@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an ALB with path-based routing to two target groups
+
+Parameters:
+  AlbSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group for the ALB
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet IDs where the ECS cluster and services will be deployed
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where the ECS cluster and services will be deployed    
+
+Resources:
+  #Target Groups
+  ECSDefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: e
+      VpcId: !Ref VpcId
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+
+  GifApiTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: gifApiTG
+      HealthCheckPath: /gifs/health
+      VpcId: !Ref VpcId
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+
+  PrimeCheckerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: primeCheckerTG
+      HealthCheckPath: /prime/health
+      VpcId: !Ref VpcId
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip      
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref AlbSecurityGroupId
+      Subnets: !Ref SubnetIds
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ECSDefaultTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ListenerRuleGifAPi:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref GifApiTargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /gifs/*
+      ListenerArn: !Ref Listener
+      Priority: 1
+
+  ListenerRulePrimeChecker:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref PrimeCheckerTargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /prime/*
+      ListenerArn: !Ref Listener
+      Priority: 2
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: The DNS name of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  GifApiTargetGroup:
+    Description: GifAPi Target Group ARN
+    Value: !Ref GifApiTargetGroup
+  PrimeCheckerTargetGroup:
+    Description: PrimeTarget Group ARN
+    Value: !Ref PrimeCheckerTargetGroup
+
+    

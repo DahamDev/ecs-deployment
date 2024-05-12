@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy two microservices on ECS with target groups
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where the ECS cluster and services will be deployed
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet IDs where the ECS cluster and services will be deployed
+  ECSSecuirityGroups:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group for the ECS services
+  GifApiTargetGroup:
+    Type: String
+    Description: Gif APi Target group Arn
+  PrimeCheckerTargetGroup:
+    Type: String
+    Description: Prime Checker Target group Arn
+Resources:
+
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: multiServiceECSCluster
+  GiftApiTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  GiftApiExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  GifApiTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: gif-service
+      NetworkMode: awsvpc
+      TaskRoleArn: !Ref GiftApiTaskRole
+      ExecutionRoleArn: !Ref GiftApiExecutionRole
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 256
+      Memory: 512
+      ContainerDefinitions:
+        - Name: gif-api
+          Image: 851725582403.dkr.ecr.us-east-1.amazonaws.com/gif-api:latest
+          PortMappings:
+            - ContainerPort: 80  
+
+  #Gif Api
+  GifSApiService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: gifAPiService
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref GifApiTaskDefinition
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref ECSSecuirityGroups
+          AssignPublicIp: ENABLED
+          Subnets: !Ref SubnetIds
+      LoadBalancers:
+        -  ContainerName: gif-api
+           ContainerPort: 80 
+           TargetGroupArn: !Ref GifApiTargetGroup        
+
+  #Service B
+  PrimeCheckerTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+
+  PrimeCheckerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  PrimeCheckerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: primechecker-service
+      NetworkMode: awsvpc
+      TaskRoleArn: !Ref PrimeCheckerTaskRole
+      ExecutionRoleArn: !Ref PrimeCheckerExecutionRole
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 256
+      Memory: 512
+      ContainerDefinitions:
+        - Name: prime-checker
+          Image: 851725582403.dkr.ecr.us-east-1.amazonaws.com/prime-checker:latest
+          PortMappings:
+            - ContainerPort: 80
+
+  PrimeCheckerService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: prime-checker-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref PrimeCheckerTaskDefinition
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref ECSSecuirityGroups
+          AssignPublicIp: ENABLED
+          Subnets: !Ref SubnetIds
+      LoadBalancers:
+        -  ContainerName: prime-checker
+           ContainerPort: 80
+           TargetGroupArn: !Ref PrimeCheckerTargetGroup 
+          
+        
+
+
+
