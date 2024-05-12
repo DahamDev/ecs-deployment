@@ -1,0 +1,12 @@
+network:
+  vpcID: vpc-0ed7419a484c71bf0
+  subnets:
+    - subnet-01e5a2c504271c633
+    - subnet-042624b1683145840
+    - subnet-05d12327efc80a3e8
+applications:
+  gifapi:
+    image: 
+  primechecker:
+    image: 
+  

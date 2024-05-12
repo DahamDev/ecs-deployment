@@ -1,6 +1,11 @@
 import boto3
+import yaml
 
 cloudformation = boto3.client('cloudformation')
+
+with open('config.yaml', 'r') as file:
+    config = yaml.safe_load(file)
+
 
 
 ##Variables
@@ -10,17 +15,17 @@ alb_security_group = "ALBSecurityGroup"
 gif_api_target_group = "GifApiTargetGroup"
 prime_checker_target_group = "PrimeCheckerTargetGroup"
 
-vpc_id = "vpc-0ed7419a484c71bf0"
-subnet_ids ="subnet-01e5a2c504271c633, subnet-042624b1683145840, subnet-05d12327efc80a3e8"
+vpc_id = config["network"]["vpcID"]
+subnet_ids =config["network"]["subnets"]
+gifapi_docker_image = config["applications"]["gifapi"]["image"]
+primechecker_docker_image = config["applications"]["primechecker"]["image"]
 
 ecs_cluster = "ECSCluster"
 capabilities = ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM']
 
-
 sec_group_stack = "multi-service-deployment-createALBAndECSSecuirityGroups"
 ecs_creation_stack = "multi-service-deployment-createECS"
 alb_creation_stack = "multi-service-deployment-createALB"
-
 
 # ==========create two securitygroups for ecs and alb
 
@@ -36,7 +41,7 @@ parameters = [
     {
         'ParameterKey': 'ECSSecurityGroup',
         'ParameterValue': ecs_security_group
-    },
+    }
 ]
 
 ecs_creation_response = cloudformation.create_stack(
@@ -140,6 +145,16 @@ parameters = [
         'ParameterKey': 'PrimeCheckerTargetGroup',
         'ParameterValue': primechecker_tg
     },
+    {
+        'ParameterKey': 'GifApiImage',
+        'ParameterValue': gifapi_docker_image
+    },
+
+    {
+        'ParameterKey': 'PrimeCheckerImage',
+        'ParameterValue': primechecker_docker_image
+    }
+
 
 
 ]

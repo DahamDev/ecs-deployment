@@ -17,6 +17,12 @@ Parameters:
   PrimeCheckerTargetGroup:
     Type: String
     Description: Prime Checker Target group Arn
+  GifApiImage:
+    Type: String
+    Description: GifAPi Docker repository
+  PrimeCheckerImage:
+    Type: String
+    Description: Prime Checker Docker repository  
 Resources:
 
   # ECS Cluster
@@ -61,7 +67,7 @@ Resources:
       Memory: 512
       ContainerDefinitions:
         - Name: gif-api
-          Image: 851725582403.dkr.ecr.us-east-1.amazonaws.com/gif-api:latest
+          Image: !Ref GifApiImage
           PortMappings:
             - ContainerPort: 80  
 
@@ -122,7 +128,7 @@ Resources:
       Memory: 512
       ContainerDefinitions:
         - Name: prime-checker
-          Image: 851725582403.dkr.ecr.us-east-1.amazonaws.com/prime-checker:latest
+          Image: !Ref PrimeCheckerImage
           PortMappings:
             - ContainerPort: 80
 
