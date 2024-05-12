@@ -6,7 +6,7 @@ network:
     - subnet-05d12327efc80a3e8
 applications:
   gifapi:
-    image: 
+    image: 851725582403.dkr.ecr.us-east-1.amazonaws.com/gif-api:latest
   primechecker:
-    image: 
+    image: 851725582403.dkr.ecr.us-east-1.amazonaws.com/prime-checker:latest      
   
