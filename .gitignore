@@ -1,5 +1,5 @@
 # Node.js
-./gif-generator/node_modules/
+*/node_modules/
 
 # Python
 __pycache__/
